@@ -1,10 +1,14 @@
 package com.wadpam.rnr.dao;
 
-import com.google.appengine.api.datastore.Query;
-import com.wadpam.rnr.domain.DLike;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 import net.sf.mardao.core.Filter;
 
-import java.util.*;
+import com.google.appengine.api.datastore.Query;
+import com.wadpam.rnr.domain.DLike;
 
 /**
  * Implementation of Business Methods related to entity DLike.
@@ -17,6 +21,8 @@ import java.util.*;
 public class DLikeDaoBean 
 	extends GeneratedDLikeDaoImpl
 		implements DLikeDao {
+    
+    public static final int MAX_ELEMENT_OF_COLLECTION_PARAM = 30;
 
     @Override
     // Find likes done by user on product
@@ -70,6 +76,77 @@ public class DLikeDaoBean
                 filters.toArray(new Filter[filters.size()]));
 
         return iterable;
+    }
+
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Iterable<DLike> queryByProductIds(Collection<String> productIds) {
+        final List<DLike> dLikes = new ArrayList<DLike>();
+        final List<String> productIdList = toList(productIds);
+        
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(">> Total product IDs: {}, Max elements of collection param: {}", productIdList.size(), MAX_ELEMENT_OF_COLLECTION_PARAM);
+        }
+
+        int fromIndex = 0;
+        while(fromIndex < productIds.size()) {
+            int toIndex = fromIndex + MAX_ELEMENT_OF_COLLECTION_PARAM;
+            if (toIndex > productIds.size()) {
+                toIndex = productIds.size();
+            }
+
+            List<String> subProductIds = productIdList.subList(fromIndex, toIndex);
+            Filter filterProductIds = new Filter(COLUMN_NAME_PRODUCTID, Query.FilterOperator.IN, subProductIds);
+            List<DLike> subDLikes = convert(queryIterable(false, 0, -1, null, null, null, false, null, false, filterProductIds));
+            dLikes.addAll(subDLikes);
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(">> fromIndex: {}, toIndex: {}, Found DLikes: {}", new Object[]{fromIndex, toIndex, subDLikes.size()});
+            }
+
+            fromIndex = toIndex;
+        }
+        
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(">> Total DLikes: {}",  dLikes.size());
+        }
+
+        return dLikes; 
+    }
+    
+    private List<DLike> convert(Iterable<DLike> from) {
+        if (from == null) {
+            return null;
+        }
+        
+        if (from instanceof List || from instanceof ArrayList) {
+            return (List) from;
+        }
+        
+        List<DLike> result = new ArrayList<DLike>();
+        for (DLike dLike : from) {
+            result.add(dLike);
+        }
+        return result;
+    }
+    
+    private List<String> toList(Collection<String> values) {
+        if (values == null) {
+            return Collections.EMPTY_LIST;
+        }
+        
+        if (values instanceof List || values instanceof ArrayList) {
+            return (List) values;
+        }
+        
+        List<String> result = new ArrayList<String>();
+        for (String value : values) {
+            result.add(value);
+        }
+        return result;
     }
 
 

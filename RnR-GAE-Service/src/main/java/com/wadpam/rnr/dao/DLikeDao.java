@@ -31,6 +31,13 @@ public interface DLikeDao extends GeneratedDLikeDao {
      * @return a key
      */
     Long findKeyByProductIdUsername(String productId, String username);
+    
+    /**
+     * Query by product IDs
+     * @param productIds
+     * @return matching like objects
+     */
+    Iterable<DLike> queryByProductIds(Collection<String> productIds);
 
     /**
      * Find likes done by user on a list of products
@@ -39,7 +46,7 @@ public interface DLikeDao extends GeneratedDLikeDao {
      * @param username the user name
      * @return list of matching likes
      */
-    Iterable<DLike> findByProductIdsUsername(Collection<String> productIds, String username);
+    Iterable<DLike> findByProductIdsUsername(Collection<String> productIds, String username);    
 
     /**
      * Find like keys done by user on a list of products
